@@ -1,0 +1,3 @@
+pip install pywin32
+pip install pyautogui
+pip install opencv-python
