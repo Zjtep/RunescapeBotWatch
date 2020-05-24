@@ -18,15 +18,16 @@ class RunescapeWindow(object):
         win32gui.EnumWindows(self.win_enum_handler, None)  # Getting each Individual hwnd for each open process
         # pprint(self.hwnd_dict)
 
-        self.runescape_window_list = []
-        self.number_clients = 0
+        self.client_main_data = self.update_client_info()
 
     def win_enum_handler(self, hwnd, ctx):
         if win32gui.IsWindowVisible(hwnd):
             self.hwnd_dict[int(hwnd)] = win32gui.GetWindowText(hwnd)
 
-    def setup_main_bot(self):
+    def update_client_info(self):
         if self.debug: print "Setting up main Runescape Window Data"
+
+        return_clients = {}
         num_clients = 0
         for hwnd, process in self.hwnd_dict.iteritems():
 
@@ -43,11 +44,11 @@ class RunescapeWindow(object):
                 # or just the client area.
                 # left, top, right, bot = win32gui.GetClientRect(hwnd)
 
-                self.runescape_window_list.append(temp_data_dict)
+                return_clients.update(temp_data_dict)
                 num_clients += 1
 
-        self.number_clients = num_clients
-        pprint(self.runescape_window_list)
+        return return_clients
+        # pprint(self.client_main_data)
 
     def set_client_data(self, cur_client, hwnd):
 
@@ -95,4 +96,9 @@ class RunescapeWindow(object):
         #                                map_loc[3])
         # -----------------------------------------
 
+        # win32gui.MoveWindow(hwnd, 0, 0, 760, 500, True)
+
         return temp_dict
+
+    def get_client_main_data(self):
+        return self.client_main_data
