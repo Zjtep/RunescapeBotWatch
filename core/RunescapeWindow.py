@@ -4,14 +4,27 @@ import win32gui
 from pprint import pprint
 from core import GameConstants as gc
 
+import logging.config
+from datetime import datetime
+
+
+# logger.debug("TGGEAAAAAAAAAAAAAST")
+
 
 class RunescapeWindow(object):
     """ Finds Runeloader Game Window"""
 
-    def __init__(self, debug=True):
+    def __init__(self, debug=True, logger=None):
+
+        if logging == None:
+            logging.basicConfig()
+            self.logger = logging.getLogger(self.__class__.__name__)
+            self.logger.setLevel(logging.INFO)
+        else:
+            self.logger = logger
 
         self.debug = debug
-        if self.debug: print "Setting Debug On"
+        self.logger.info("Setting Debug On")
 
         self.hwnd_dict = {}
 
@@ -25,7 +38,8 @@ class RunescapeWindow(object):
             self.hwnd_dict[int(hwnd)] = win32gui.GetWindowText(hwnd)
 
     def update_client_info(self):
-        if self.debug: print "Setting up main Runescape Window Data"
+        # if self.debug: print "Setting up main Runescape Window Data"
+        self.logger.info("Setting up main Runescape Window Data")
 
         return_clients = {}
         num_clients = 0
@@ -52,19 +66,20 @@ class RunescapeWindow(object):
 
     def set_client_data(self, cur_client, hwnd):
 
-        if self.debug: print "Setting up client {0}'s data".format(cur_client)
-
+        self.logger.info("Setting up client {0}'s data".format(cur_client))
+        # win32gui.MoveWindow(hwnd, 0, 0, 760, 500, True)
         temp_dict = {}
         left, top, right, bot = win32gui.GetWindowRect(hwnd)
+
         client_loc = (left, top, right, bot)
         temp_dict["ClientLoc"] = client_loc
         width = right - left
         height = bot - top
 
         if width != gc.default_client_size[0]:
-            print "ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0])
+            self.logger.error("ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0]))
         if height != gc.default_client_size[1]:
-            print "ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1])
+            self.logger.error("ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1]))
 
         client_size = (0, 0, width, height)
         temp_dict["ClientDimension"] = client_size
