@@ -85,6 +85,8 @@ def main(logger):
         logger.debug("Zero Instances of Runescape Detected")
         return
 
+    run_housecleaning(base_client_info)
+
     # check_current_map()
     # pprint(base_client_info)
     cur_client_info = game_window.update_client_info()
@@ -94,6 +96,7 @@ def main(logger):
     logger.info("Starting Main Loop")
     maps_in_sync_status = is_map_in_sync(base_client_info, cur_client_info)
 
+    num_loop = 0
     while maps_in_sync_status:
         time.sleep(5)
 
@@ -103,9 +106,29 @@ def main(logger):
         print maps_in_sync_status
 
         if not maps_in_sync_status:
-            logger.info("Client Maps are out of sync. Stopping")
+            logger.info("Client Maps are out of sync. Stopping.......")
         #     maps_in_sync_status = False
-        logger.info("Client Maps are in sync. Continuing ")
+        logger.info("Client Maps are in sync. Continuing....... ")
+
+        num_loop += 1
+        if num_loop % 10 == 0:
+            run_housecleaning(base_client_info)
+
+
+def run_housecleaning(base_client_info):
+    logger.info("Running House Cleaning")
+    important_files = []
+    for base_name, base_info in base_client_info.iteritems():
+        important_files.append(os.path.basename(base_info.get("GamePlayFile")))
+        important_files.append(os.path.basename(base_info.get("MapFile")))
+        important_files.append(os.path.basename(base_info.get("ClientFile")))
+
+    filelist = [f for f in os.listdir(gc.temp_folder) if (f.endswith(".png") and f not in important_files)]
+
+    for f in filelist:
+        temp_remove = "{0}/{1}".format(gc.temp_folder, f)
+        os.remove(temp_remove)
+        logger.info("Removing {0}".format(temp_remove))
 
 
 if __name__ == '__main__':

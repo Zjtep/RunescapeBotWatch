@@ -39,7 +39,7 @@ class RunescapeWindow(object):
 
     def update_client_info(self):
         # if self.debug: print "Setting up main Runescape Window Data"
-        self.logger.info("Setting up main Runescape Window Data")
+        # self.logger.info("Setting up main Runescape Window Data")
 
         return_clients = {}
         num_clients = 0
@@ -66,8 +66,8 @@ class RunescapeWindow(object):
 
     def set_client_data(self, cur_client, hwnd):
 
-        self.logger.info("Setting up client {0}'s data".format(cur_client))
-        # win32gui.MoveWindow(hwnd, 0, 0, 760, 500, True)
+        # self.logger.info("Setting up client {0}'s data".format(cur_client))
+
         temp_dict = {}
         left, top, right, bot = win32gui.GetWindowRect(hwnd)
 
@@ -75,7 +75,7 @@ class RunescapeWindow(object):
         temp_dict["ClientLoc"] = client_loc
         width = right - left
         height = bot - top
-
+        # win32gui.MoveWindow(hwnd, 0, 0, 809, 534, True)
         if width != gc.default_client_size[0]:
             self.logger.error("ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0]))
         if height != gc.default_client_size[1]:
