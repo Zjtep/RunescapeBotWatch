@@ -1,10 +1,12 @@
 import os
 import time
+import json
 
 from pprint import pprint
 from core import GameConstants as gc
 from core.RunescapeWindow import RunescapeWindow
 from core import Keyboard
+from core.send_mail import send_email
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
@@ -21,7 +23,7 @@ def match_images(template_path, compare_path):
     w, h = template.shape[::-1]
 
     res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-    threshold = 0.90
+    threshold = gc.template_match_threshold
     loc = np.where(res >= threshold)
     for pt in zip(*loc[::-1]):
         # cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
@@ -35,6 +37,7 @@ def is_map_in_sync(base_client_infos, cur_client_infos):
     # pprint(base_client_infos)
     # pprint(cur_client_infos)
     for client_name, client_info in cur_client_infos.iteritems():
+        logger.info("Checking {0}".format(client_name))
         base_info = base_client_infos.get(client_name)
         base_map_file_path = base_info.get("MapFile")
         # base_map_file_path = "C:/temp/test/edaeac32-edf2-42af-ac74-ac6db88b5ec3.png"
@@ -73,10 +76,6 @@ def set_temp_folder():
     return False
 
 
-def stop_automation():
-    Keyboard.hotkeys("alt", "f2")
-
-
 def main(logger):
     game_window = RunescapeWindow(logger=logger)
 
@@ -96,6 +95,10 @@ def main(logger):
     logger.info("Starting Main Loop")
     maps_in_sync_status = is_map_in_sync(base_client_info, cur_client_info)
 
+    filepath = "{0}/{1}".format(gc.temp_folder, 'file.json')
+    fh = open(filepath)
+    cache_json_data = json.load(fh)
+
     num_loop = 0
     while maps_in_sync_status:
         time.sleep(5)
@@ -106,13 +109,19 @@ def main(logger):
         print maps_in_sync_status
 
         if not maps_in_sync_status:
-            logger.info("Client Maps are out of sync. Stopping.......")
-        #     maps_in_sync_status = False
-        logger.info("Client Maps are in sync. Continuing....... ")
+            logger.info("OUT OF SYNC. Stopping.......")
+        else:
+            #     maps_in_sync_status = False
+            logger.info("IN SYNC. Continuing....... ")
 
         num_loop += 1
         if num_loop % 10 == 0:
             run_housecleaning(base_client_info)
+
+    if not maps_in_sync_status:
+        send_notification(cache_json_data)
+        stop_MouseAndKeyBoardRecorder()
+    logger.info("Exit Process")
 
 
 def run_housecleaning(base_client_info):
@@ -131,6 +140,23 @@ def run_housecleaning(base_client_info):
         logger.info("Removing {0}".format(temp_remove))
 
 
+def stop_MouseAndKeyBoardRecorder():
+    logger.info("Stopping Mouse And Keyboard Recording")
+    Keyboard.hotkeys("alt", "f2")
+
+
+def send_notification(json_data):
+    username = json_data.get("user")
+    password = json_data.get("pass")
+    send = json_data.get("send")
+
+    subject = "runescape bots are out of sync"
+    msg = "runescape bots are out of sync"
+
+    send_status = send_email(username, password, send, subject, msg)
+    logger.info(send_status)
+
+
 if __name__ == '__main__':
     logging.config.fileConfig('logging.conf')
     logger = logging.getLogger('MainLogger')
@@ -145,10 +171,9 @@ if __name__ == '__main__':
     # logger.debug("test")
 
     set_temp_folder()
+
     logger.info("########################################################################")
-    logger.info("########################################################################")
-    logger.info("----------------------- STARTING NEW SESSION ---------------------------")
-    logger.info("########################################################################")
+    logger.info("------------------------- BOT WATCH STARTED ----------------------------")
     logger.info("########################################################################")
 
     main(logger)
