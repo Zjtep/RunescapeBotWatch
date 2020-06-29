@@ -158,7 +158,10 @@ def send_notification(json_data):
 
 
 if __name__ == '__main__':
-    logging.config.fileConfig('logging.conf')
+    # logging.config.fileConfig('logging.conf')
+
+    # print "{0}/{1}".format(gc.temp_folder, 'logging.conf')
+    logging.config.fileConfig("{0}/{1}".format(gc.temp_folder, 'logging.conf'))
     logger = logging.getLogger('MainLogger')
     str_time = '{:%Y-%m-%d}'.format(datetime.now())
     log_full_file = "C:/temp/log/{0}.log".format(str_time)

@@ -10,7 +10,8 @@ from pynput import keyboard
 from core import Keyboard
 from core import GameConstants as gc
 
-logging.config.fileConfig('logging.conf')
+# logging.config.fileConfig('logging.conf')
+logging.config.fileConfig("{0}/{1}".format(gc.temp_folder, 'logging.conf'))
 logger = logging.getLogger('MainLogger')
 str_time = '{:%Y-%m-%d}'.format(datetime.now())
 log_full_file = "C:/temp/log/{0}.log".format(str_time)
@@ -38,6 +39,8 @@ def close_bot_watch_session():
             p = psutil.Process(BOT_WATCH_PID)
             p.terminate()
         except psutil.NoSuchProcess:
+
+            logger.info("close_bot_watch_session NoSuchProcess")
             pass
 
 
@@ -65,10 +68,14 @@ def on_press(key):
 
 
 def on_release(key):
-    try:
+
+    if key in CUR_ACTIVE_MODIFIER:
         CUR_ACTIVE_MODIFIER.remove(key)
-    except KeyError:
-        pass
+    # try:
+    #     CUR_ACTIVE_MODIFIER.remove(key)
+    # except KeyError:
+    #     logger.info("KeyError")
+    #     pass
 
 
 logger.info("########################################################################")
@@ -82,9 +89,11 @@ start_MouseAndKeyBoardRecorder()
 # subprocess.Popen("{0} WatchStart.py".format(gc.python_path))
 
 
-p = subprocess.Popen([sys.executable, 'WatchStart.py'],
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT)
+# p = subprocess.Popen([sys.executable, 'WatchStart.py'],
+#                      stdout=subprocess.PIPE,
+#                      stderr=subprocess.STDOUT,shell=True)
+
+p = subprocess.Popen([sys.executable, 'WatchStart.py'], close_fds=True)
 
 BOT_WATCH_PID = p.pid
 logger.info("Starting WatchStart Subprocess on Pid {0}...".format(BOT_WATCH_PID))
@@ -92,10 +101,13 @@ logger.info("Starting WatchStart Subprocess on Pid {0}...".format(BOT_WATCH_PID)
 for proc in psutil.process_iter():
     try:
         # Get process name & pid from process object.
+        logger.info("processName {0} on {1}...".format(proc.name(),proc.pid))
+
         processName = proc.name()
         processID = proc.pid
         # print(processName, ' ::: ', processID)
     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        logger.info("NoSuchProcess Error")
         pass
 
 with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
