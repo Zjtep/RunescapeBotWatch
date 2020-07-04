@@ -1,6 +1,11 @@
+import os
+import subprocess
+
 from core import Screenshot
 
 import win32gui
+import win32process
+
 from pprint import pprint
 from core import GameConstants as gc
 
@@ -31,6 +36,48 @@ class RunescapeWindow(object):
         win32gui.EnumWindows(self.win_enum_handler, None)  # Getting each Individual hwnd for each open process
         # pprint(self.hwnd_dict)
 
+    def launch_client(self, confirmation=False):
+        client_executable = "{0}/{1}/{2}".format(os.getenv('LOCALAPPDATA'), "RuneLite", gc.runelite_executable)
+
+        if not os.path.isfile(client_executable):
+            client_executable = "{0}/{1}".format(gc.runelite_location, gc.runelite_executable)
+
+        # print client_executable
+        client_process = subprocess.Popen([client_executable])
+
+        client_pid = client_process.pid
+
+        if not confirmation:
+            self.logger.info("Launch Client without confirmation")
+            return client_pid
+
+        # import time
+        # time.sleep(2)  # make sure the everything is finished before killing the process
+        # win32gui.EnumWindows(self.win_enum_handler, None)
+        #
+        #
+        # # for hwnd, process in self.hwnd_dict.iteritems():
+        # #     print hwnd,process,pid
+        # #     # if gc.client_name in process:
+        #
+        # for hwnd in self.get_hwnds_for_pid(process.pid):
+        #     print hwnd, "=>", win32gui.GetWindowText(hwnd)
+
+    def get_client_hwnds(self):
+
+    def get_hwnds_for_pid(self, pid):
+        def callback(hwnd, hwnds):
+            if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+                _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                if found_pid == pid:
+                    hwnds.append(hwnd)
+            return True
+
+        hwnds = []
+        win32gui.EnumWindows(callback, hwnds)
+        return hwnds
+
+    def set_main_client_data(self):
         self.client_main_data = self.update_client_info()
 
     def win_enum_handler(self, hwnd, ctx):
@@ -52,6 +99,9 @@ class RunescapeWindow(object):
                 temp_data_dict[cur_client]["Hwnd"] = hwnd
 
                 client_data = self.set_client_data(cur_client, hwnd)
+
+                if client_data is None:
+                    return
 
                 temp_data_dict[cur_client].update(client_data)
                 # Change the line below depending on whether you want the whole window
@@ -78,8 +128,11 @@ class RunescapeWindow(object):
         # win32gui.MoveWindow(hwnd, 0, 0, 809, 534, True)
         if width != gc.default_client_size[0]:
             self.logger.error("ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0]))
+            return
         if height != gc.default_client_size[1]:
-            self.logger.error("ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1]))
+            self.logger.error(
+                "ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1]))
+            return
 
         client_size = (0, 0, width, height)
         temp_dict["ClientDimension"] = client_size

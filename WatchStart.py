@@ -1,6 +1,8 @@
 import os
 import time
 import json
+import subprocess
+import time
 
 from pprint import pprint
 from core import GameConstants as gc
@@ -70,18 +72,19 @@ def set_temp_folder():
     log_folder = "{0}/{1}".format(gc.temp_folder, "log")
     if not os.path.exists(log_folder):
         os.mkdir(log_folder)
-
     if os.path.exists(gc.temp_folder):
         return True
     return False
 
 
-def main(logger):
+def run_bot_cycle(logger):
     game_window = RunescapeWindow(logger=logger)
+    game_window.set_main_client_data()
 
     base_client_info = game_window.get_client_main_data()
-    if not base_client_info:
-        logger.debug("Zero Instances of Runescape Detected")
+    if base_client_info is None:
+        logger.info("Zero Instances of Runescape Detected")
+        stop_MouseAndKeyBoardRecorder()
         return
 
     run_housecleaning(base_client_info)
@@ -105,6 +108,7 @@ def main(logger):
 
         logger.info("Checking if Map is in Sync")
         cur_client_info = game_window.update_client_info()
+
         maps_in_sync_status = is_map_in_sync(base_client_info, cur_client_info)
         print maps_in_sync_status
 
@@ -122,6 +126,22 @@ def main(logger):
         send_notification(cache_json_data)
         stop_MouseAndKeyBoardRecorder()
     logger.info("Exit Process")
+
+
+def launch_runescape_clients(logger):
+    logger.info("Launching Runescape Clients")
+
+    game_window = RunescapeWindow(logger=logger)
+
+    print game_window.get_client_hwnds()
+    # client_pid = game_window.launch_client()
+
+
+
+def main(logger):
+    launch_runescape_clients(logger)
+
+    # run_bot_cycle(logger)
 
 
 def run_housecleaning(base_client_info):
