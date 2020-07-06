@@ -1,6 +1,7 @@
 import os
+import random
 import subprocess
-
+import psutil
 from core import Screenshot
 
 import win32gui
@@ -63,9 +64,31 @@ class RunescapeWindow(object):
         # for hwnd in self.get_hwnds_for_pid(process.pid):
         #     print hwnd, "=>", win32gui.GetWindowText(hwnd)
 
-    def get_client_hwnds(self):
+    def close_client_by_pid(self, pid):
 
-    def get_hwnds_for_pid(self, pid):
+        try:
+            self.logger.info("Manually terminating process with pid {0}".format(pid))
+            p = psutil.Process(pid)
+            p.terminate()
+        except psutil.NoSuchProcess:
+
+            self.logger.info("No such Process")
+            return
+
+    def get_all_client_hwnds(self):
+
+        return_list = []
+        win32gui.EnumWindows(self.win_enum_handler, None)
+        for hwnd, process in self.hwnd_dict.iteritems():
+
+            if (gc.client_name == process) or ("{0} -".format(gc.client_name) in process) or (
+                    "RuneLite Launcher" == process):
+                temp_hwnd_info = (hwnd, process)
+                return_list.append(temp_hwnd_info)
+
+        return return_list
+
+    def convert_to_hwnds(self, pid):
         def callback(hwnd, hwnds):
             if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
                 _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -76,6 +99,58 @@ class RunescapeWindow(object):
         hwnds = []
         win32gui.EnumWindows(callback, hwnds)
         return hwnds
+
+    def convert_to_pid(self, hwnd):
+        threadid, pid = win32process.GetWindowThreadProcessId(hwnd)
+        return pid
+
+    def calculate_client_location(self, hwnd):
+
+        left, top, right, bot = win32gui.GetWindowRect(hwnd)
+
+        return (left, top, right, bot)
+
+    def move_window(self, hwnd, left, top, right, bot):
+        win32gui.MoveWindow(hwnd, left, top, right, bot, True)
+
+    def shuffle_clients(self, hwnds):
+
+        random.shuffle(hwnds)
+
+        default_x = gc.default_client_size[0]
+        default_y = gc.default_client_size[1]
+
+        y_offset = 27
+
+        for index, hwnd in enumerate(hwnds):
+            cur_client = index + 1
+            if cur_client == 1:
+                self.move_window(hwnd, 0, 0, default_x, default_y)
+            elif cur_client == 2:
+                self.move_window(hwnds[1], 0, default_y - y_offset, default_x, default_y)
+            elif cur_client == 3:
+                self.move_window(hwnds[2], default_x, 0, default_x, default_y)
+            elif cur_client == 4:
+                self.move_window(hwnds[3], default_x, default_y - y_offset, default_x, default_y)
+
+
+
+    def calculate_client_dimensions(self, hwnd):
+
+        left, top, right, bot = win32gui.GetWindowRect(hwnd)
+
+        width = right - left
+        height = bot - top
+        # win32gui.MoveWindow(hwnd, 0, 0, 809, 534, True)
+        if width != gc.default_client_size[0]:
+            self.logger.error("ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0]))
+            return
+        if height != gc.default_client_size[1]:
+            self.logger.error(
+                "ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1]))
+            return
+
+        return (0, 0, width, height)
 
     def set_main_client_data(self):
         self.client_main_data = self.update_client_info()
@@ -92,7 +167,8 @@ class RunescapeWindow(object):
         num_clients = 0
         for hwnd, process in self.hwnd_dict.iteritems():
 
-            if gc.client_name in process:
+            if (gc.client_name == process) or ("{0} -".format(gc.client_name) in process) or (
+                    "RuneLite Launcher" == process):
                 cur_client = "Window{0}".format(num_clients)
 
                 temp_data_dict = {cur_client: {}}
@@ -119,23 +195,17 @@ class RunescapeWindow(object):
         # self.logger.info("Setting up client {0}'s data".format(cur_client))
 
         temp_dict = {}
-        left, top, right, bot = win32gui.GetWindowRect(hwnd)
+        left, top, right, bot = self.calculate_client_location(hwnd)
 
-        client_loc = (left, top, right, bot)
-        temp_dict["ClientLoc"] = client_loc
-        width = right - left
-        height = bot - top
-        # win32gui.MoveWindow(hwnd, 0, 0, 809, 534, True)
-        if width != gc.default_client_size[0]:
-            self.logger.error("ERROR: Client Width set to {0}. Default is {1}".format(width, gc.default_client_size[0]))
-            return
-        if height != gc.default_client_size[1]:
-            self.logger.error(
-                "ERROR: Client Height set to {0}. Default is {1}".format(width, gc.default_client_size[1]))
+        temp_dict["ClientLoc"] = (left, top, right, bot)
+
+        if self.calculate_client_dimensions(hwnd) is None:
             return
 
-        client_size = (0, 0, width, height)
-        temp_dict["ClientDimension"] = client_size
+        _, _, width, height = self.calculate_client_dimensions(hwnd)
+
+        temp_dict["ClientDimension"] = (0, 0, width, height)
+
         client_imgrgb = Screenshot.hdms_this(hwnd, left, top, right, bot)
         temp_dict["ClientFile"] = Screenshot.save_image(client_imgrgb)
 

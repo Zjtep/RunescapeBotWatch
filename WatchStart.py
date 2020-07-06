@@ -133,15 +133,73 @@ def launch_runescape_clients(logger):
 
     game_window = RunescapeWindow(logger=logger)
 
-    print game_window.get_client_hwnds()
-    # client_pid = game_window.launch_client()
+    cur_client_hwnds = game_window.get_all_client_hwnds()
 
+    # while len(cur_client_hwnds) != gc.num_clients:
+
+    if len(cur_client_hwnds) < gc.num_clients:
+        num_launch = gc.num_clients - len(cur_client_hwnds)
+        logger.info("Launching clients {0}".format(num_launch))
+        for x in range(0, num_launch):
+            client_pid = game_window.launch_client()
+        time.sleep(40)
+    elif len(cur_client_hwnds) > gc.num_clients:
+        num_cull = len(cur_client_hwnds) - gc.num_clients
+
+        temp_hwnds = cur_client_hwnds
+        logger.info("Running too many clients. culling {0}".format(num_cull))
+        for x in range(0, num_cull):
+            cull_pid = game_window.convert_to_pid(temp_hwnds.pop(x)[0])
+            game_window.close_client_by_pid(cull_pid)
+
+
+    cur_client_hwnds = game_window.get_all_client_hwnds()
+
+
+
+    #check dimenions to make sure the new clients are launched correctly
+    for client_hwnds in cur_client_hwnds:
+
+        client_dimensions = game_window.calculate_client_dimensions(client_hwnds[0])
+        if client_dimensions is None:
+            cull_pid = game_window.convert_to_pid(client_hwnds[0])
+            game_window.close_client_by_pid(cull_pid)
+
+    logger.info("Complete Launching Clients")
+    return game_window.get_all_client_hwnds()
+
+def shuffle_client_locations(logger):
+    logger.info("Shuffle Client Locations")
+
+    game_window = RunescapeWindow(logger=logger)
+    cur_client_hwnds = game_window.get_all_client_hwnds()
+
+    hwnds_list = []
+    for client in cur_client_hwnds :
+
+        hwnds_list.append(client[0])
+        # print cur_client_hwnds[0][0]
+
+    game_window.shuffle_clients(hwnds_list)
+
+
+def test(logger):
+    launch_runescape_clients(logger)
+    shuffle_client_locations(logger)
+
+    # game_window = RunescapeWindow(logger=logger)
+    # game_window.set_main_client_data()
+    #
+    # pprint(game_window.get_client_main_data())
+
+    # print game_window.calculate_client_location(198590)
 
 
 def main(logger):
-    launch_runescape_clients(logger)
 
-    # run_bot_cycle(logger)
+    launch_runescape_clients(logger)
+    shuffle_client_locations(logger)
+    run_bot_cycle(logger)
 
 
 def run_housecleaning(base_client_info):
@@ -200,3 +258,4 @@ if __name__ == '__main__':
     logger.info("########################################################################")
 
     main(logger)
+    # test(logger)
