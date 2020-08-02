@@ -9,6 +9,7 @@ from pprint import pprint
 from pynput import keyboard
 from core import Keyboard
 from core import GameConstants as gc
+import WatchStart as wsc
 
 # logging.config.fileConfig('logging.conf')
 logging.config.fileConfig("{0}/{1}".format(gc.temp_folder, 'logging.conf'))
@@ -83,6 +84,10 @@ logger.info("###################################################################
 logger.info("----------------------- STARTING NEW SESSION ---------------------------")
 logger.info("########################################################################")
 logger.info("########################################################################")
+
+
+# wsc.launch_runescape_clients(logger)
+wsc.shuffle_client_locations(logger)
 
 start_MouseAndKeyBoardRecorder()
 # os.system()

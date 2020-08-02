@@ -43,8 +43,10 @@ class RunescapeWindow(object):
         if not os.path.isfile(client_executable):
             client_executable = "{0}/{1}".format(gc.runelite_location, gc.runelite_executable)
 
+        DETACHED_PROCESS = 8
+
         # print client_executable
-        client_process = subprocess.Popen([client_executable])
+        client_process = subprocess.Popen([client_executable], creationflags=DETACHED_PROCESS)
 
         client_pid = client_process.pid
 
@@ -79,7 +81,8 @@ class RunescapeWindow(object):
 
         return_list = []
         win32gui.EnumWindows(self.win_enum_handler, None)
-        for hwnd, process in self.hwnd_dict.iteritems():
+        # for hwnd, process in self.hwnd_dict.iteritems():
+        for hwnd, process in self.hwnd_dict.items():
 
             if (gc.client_name == process) or ("{0} -".format(gc.client_name) in process) or (
                     "RuneLite Launcher" == process):
@@ -91,7 +94,7 @@ class RunescapeWindow(object):
     def convert_to_hwnds(self, pid):
         def callback(hwnd, hwnds):
             if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
-                _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                _, found_pid = win32process.GetWindowtemplate_match_thresholdProcessId(hwnd)
                 if found_pid == pid:
                     hwnds.append(hwnd)
             return True
@@ -133,8 +136,6 @@ class RunescapeWindow(object):
             elif cur_client == 4:
                 self.move_window(hwnds[3], default_x, default_y - y_offset, default_x, default_y)
 
-
-
     def calculate_client_dimensions(self, hwnd):
 
         left, top, right, bot = win32gui.GetWindowRect(hwnd)
@@ -165,7 +166,8 @@ class RunescapeWindow(object):
 
         return_clients = {}
         num_clients = 0
-        for hwnd, process in self.hwnd_dict.iteritems():
+        # for hwnd, process in self.hwnd_dict.iteritems():
+        for hwnd, process in self.hwnd_dict.items():
 
             if (gc.client_name == process) or ("{0} -".format(gc.client_name) in process) or (
                     "RuneLite Launcher" == process):

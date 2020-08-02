@@ -3,8 +3,8 @@ import pyautogui
 import time
 import random
 ### My Modules
-import RandTime
-
+# import RandTime
+from . import RandTime
 
 def type_this(strings):
     """Types the passed characters with random pauses in between strokes"""
@@ -54,7 +54,7 @@ def hold_key(key):
     RandTime.randomTime(650, 750)
     # RandTime.randomTime(0, 5)
     pyautogui.keyUp(key)
-    print "done"
+
 
 
 def hotkeys(control, key):

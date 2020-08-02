@@ -13,6 +13,6 @@ python_path = r"C:/Python27/python.exe"
 runelite_location = "D:/Program Files/RuneLite"
 runelite_executable = "RuneLite.exe"
 template_match_threshold = 0.90
-num_clients = 4
+num_clients = 3
 
 mouse_recorder_path = r"F:/new volume/Program/Mouse Recorder/MouseKeyboardRecorder.exe"

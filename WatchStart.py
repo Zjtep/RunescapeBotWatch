@@ -18,7 +18,7 @@ import logging.config
 DEBUG = True
 
 
-def match_images(template_path, compare_path):
+def match_images(template_path, compare_path, show_box=False):
     img_rgb = cv2.imread(template_path)
     img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
     template = cv2.imread(compare_path, 0)
@@ -27,18 +27,26 @@ def match_images(template_path, compare_path):
     res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
     threshold = gc.template_match_threshold
     loc = np.where(res >= threshold)
+    coord = None
     for pt in zip(*loc[::-1]):
-        # cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
 
-        return (pt[0], pt[1], pt[0] + w, pt[1] + h)
-    # cv2.imwrite('res.png', img_rgb)
-    return None
+        if show_box:
+            cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
+
+            cv2.rectangle(img_rgb, (pt[0] + 6, pt[1] + 16), (pt[0] + 7, pt[1] + 16), (255, 0, 255), 2)
+
+        coord = (pt[0], pt[1], pt[0] + w, pt[1] + h)
+
+    if show_box:
+        cv2.imwrite('sample.png', img_rgb)
+    return coord
 
 
 def is_map_in_sync(base_client_infos, cur_client_infos):
     # pprint(base_client_infos)
     # pprint(cur_client_infos)
-    for client_name, client_info in cur_client_infos.iteritems():
+    # for client_name, client_info in cur_client_infos.iteritems():
+    for client_name, client_info in cur_client_infos.items():
         logger.info("Checking {0}".format(client_name))
         base_info = base_client_infos.get(client_name)
         base_map_file_path = base_info.get("MapFile")
@@ -110,7 +118,7 @@ def run_bot_cycle(logger):
         cur_client_info = game_window.update_client_info()
 
         maps_in_sync_status = is_map_in_sync(base_client_info, cur_client_info)
-        print maps_in_sync_status
+        print(maps_in_sync_status)
 
         if not maps_in_sync_status:
             logger.info("OUT OF SYNC. Stopping.......")
@@ -142,7 +150,7 @@ def launch_runescape_clients(logger):
         logger.info("Launching clients {0}".format(num_launch))
         for x in range(0, num_launch):
             client_pid = game_window.launch_client()
-        time.sleep(40)
+        time.sleep(60)
     elif len(cur_client_hwnds) > gc.num_clients:
         num_cull = len(cur_client_hwnds) - gc.num_clients
 
@@ -152,12 +160,9 @@ def launch_runescape_clients(logger):
             cull_pid = game_window.convert_to_pid(temp_hwnds.pop(x)[0])
             game_window.close_client_by_pid(cull_pid)
 
-
     cur_client_hwnds = game_window.get_all_client_hwnds()
 
-
-
-    #check dimenions to make sure the new clients are launched correctly
+    # check dimenions to make sure the new clients are launched correctly
     for client_hwnds in cur_client_hwnds:
 
         client_dimensions = game_window.calculate_client_dimensions(client_hwnds[0])
@@ -168,6 +173,7 @@ def launch_runescape_clients(logger):
     logger.info("Complete Launching Clients")
     return game_window.get_all_client_hwnds()
 
+
 def shuffle_client_locations(logger):
     logger.info("Shuffle Client Locations")
 
@@ -175,18 +181,65 @@ def shuffle_client_locations(logger):
     cur_client_hwnds = game_window.get_all_client_hwnds()
 
     hwnds_list = []
-    for client in cur_client_hwnds :
-
+    for client in cur_client_hwnds:
         hwnds_list.append(client[0])
         # print cur_client_hwnds[0][0]
 
     game_window.shuffle_clients(hwnds_list)
 
 
-def test(logger):
-    launch_runescape_clients(logger)
-    shuffle_client_locations(logger)
+def run_recovery(logger):
+    # base_map_file_path = r"C:\temp\test\ca8b7525-9399-42f7-9eee-c0fdf0431b06.png"
+    # client_map_file_path = r"C:\temp\templates\seer_village_bank.png"
+    # match_coordinates = match_images(base_map_file_path, client_map_file_path,show_box=True)
+    # if match_coordinates is None:
+    #     pass
+    # print "YES", match_coordinates
 
+    game_window = RunescapeWindow(logger=logger)
+    game_window.set_main_client_data()
+
+    pprint(game_window.get_client_main_data())
+    base_client_info = game_window.get_client_main_data()
+
+    # base_map_file_path = r"C:\temp\test\ca8b7525-9399-42f7-9eee-c0fdf0431b06.png"
+    base_map_file_path = base_client_info.get("MapFile")
+
+    for client_name, client_info in base_client_info.iteritems():
+        logger.info("run recovery on {0}".format(client_name))
+        base_info = base_client_info.get(client_name)
+        base_map_file_path = base_info.get("MapFile")
+        # base_map_file_path = "C:/temp/test/edaeac32-edf2-42af-ac74-ac6db88b5ec3.png"
+        bank_anchor_file = r"C:\temp\templates\seer_village_bank.png"
+        match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
+        if match_coordinates is None:
+            logger.info("Recovery has failed. Ending Script")
+            return
+        print("YES", match_coordinates)
+
+    #     # base_map_file_path = "C:/temp/test/edaeac32-edf2-42af-ac74-ac6db88b5ec3.png"
+    #     client_map_file_path = client_info.get("MapFile")
+    #     match_coordinates = match_images(base_map_file_path, client_map_file_path)
+    #     if match_coordinates is None:
+    #         return False
+    #
+    # return True
+
+    # bank_anchor_file= r"C:\temp\templates\seer_village_bank.png"
+    #
+    # match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
+    # if match_coordinates is None:
+    #     pass
+    # print "YES", match_coordinates
+
+    # cv2.rectangle(img_rgb, (pt[0] + 6, pt[1] + 16), (pt[0] + 7, pt[1] + 16), (255, 0, 255), 2)
+
+
+def test(logger):
+    # launch_runescape_clients(logger)
+    shuffle_client_locations(logger)
+    run_bot_cycle(logger)
+    # run_recovery(logger)
     # game_window = RunescapeWindow(logger=logger)
     # game_window.set_main_client_data()
     #
@@ -196,16 +249,16 @@ def test(logger):
 
 
 def main(logger):
-
-    launch_runescape_clients(logger)
-    shuffle_client_locations(logger)
+    # launch_runescape_clients(logger)
+    # shuffle_client_locations(logger)
     run_bot_cycle(logger)
 
 
 def run_housecleaning(base_client_info):
     logger.info("Running House Cleaning")
     important_files = []
-    for base_name, base_info in base_client_info.iteritems():
+    # for base_name, base_info in base_client_info.iteritems():
+    for base_name, base_info in base_client_info.items():
         important_files.append(os.path.basename(base_info.get("GamePlayFile")))
         important_files.append(os.path.basename(base_info.get("MapFile")))
         important_files.append(os.path.basename(base_info.get("ClientFile")))
