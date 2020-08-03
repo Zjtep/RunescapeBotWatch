@@ -3,17 +3,21 @@ import time
 import json
 import subprocess
 import time
+import operator
 
 from pprint import pprint
 from core import GameConstants as gc
 from core.RunescapeWindow import RunescapeWindow
 from core import Keyboard
 from core.send_mail import send_email
+# from core import utils
+
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 from datetime import datetime
 import logging.config
+from pyclick import HumanClicker
 
 DEBUG = True
 
@@ -35,7 +39,8 @@ def match_images(template_path, compare_path, show_box=False):
 
             cv2.rectangle(img_rgb, (pt[0] + 6, pt[1] + 16), (pt[0] + 7, pt[1] + 16), (255, 0, 255), 2)
 
-        coord = (pt[0], pt[1], pt[0] + w, pt[1] + h)
+        # coord = (pt[0], pt[1], pt[0] + w, pt[1] + h)
+        coord = (int(pt[0]), int(pt[1]), int(pt[0] + w), int(pt[1] + h))
 
     if show_box:
         cv2.imwrite('sample.png', img_rgb)
@@ -196,6 +201,8 @@ def run_recovery(logger):
     #     pass
     # print "YES", match_coordinates
 
+    hc = HumanClicker()
+
     game_window = RunescapeWindow(logger=logger)
     game_window.set_main_client_data()
 
@@ -203,9 +210,10 @@ def run_recovery(logger):
     base_client_info = game_window.get_client_main_data()
 
     # base_map_file_path = r"C:\temp\test\ca8b7525-9399-42f7-9eee-c0fdf0431b06.png"
-    base_map_file_path = base_client_info.get("MapFile")
+    # base_map_file_path = base_client_info.get("MapFile")
 
-    for client_name, client_info in base_client_info.iteritems():
+    # for client_name, client_info in base_client_info.iteritems():
+    for client_name, client_info in base_client_info.items():
         logger.info("run recovery on {0}".format(client_name))
         base_info = base_client_info.get(client_name)
         base_map_file_path = base_info.get("MapFile")
@@ -214,16 +222,15 @@ def run_recovery(logger):
         match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
         if match_coordinates is None:
             logger.info("Recovery has failed. Ending Script")
-            return
-        print("YES", match_coordinates)
+            continue
+        else:
+            click_loc = tuple(map(operator.add, base_info.get("ClientLoc"), base_info.get("GamePlayLocByClient")))
+            click_loc = tuple(map(operator.add, click_loc, base_info.get("MapLocByGamePlay")))
+            click_loc = tuple(map(operator.add, click_loc, match_coordinates))
+            click_loc = tuple(map(operator.add, click_loc, (6, 16, 7, 16)))
 
-    #     # base_map_file_path = "C:/temp/test/edaeac32-edf2-42af-ac74-ac6db88b5ec3.png"
-    #     client_map_file_path = client_info.get("MapFile")
-    #     match_coordinates = match_images(base_map_file_path, client_map_file_path)
-    #     if match_coordinates is None:
-    #         return False
-    #
-    # return True
+            hc.move((click_loc[0], click_loc[1]), 2)
+
 
     # bank_anchor_file= r"C:\temp\templates\seer_village_bank.png"
     #
@@ -237,11 +244,11 @@ def run_recovery(logger):
 
 def test(logger):
     # launch_runescape_clients(logger)
-    shuffle_client_locations(logger)
-    run_bot_cycle(logger)
-    # run_recovery(logger)
+    # shuffle_client_locations(logger)
+    # run_bot_cycle(logger)
+    run_recovery(logger)
     # game_window = RunescapeWindow(logger=logger)
-    # game_window.set_main_client_data()
+    # game_window.set_main_client_datla()
     #
     # pprint(game_window.get_client_main_data())
 
