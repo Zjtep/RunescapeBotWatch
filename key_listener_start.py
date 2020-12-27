@@ -60,16 +60,32 @@ def on_press(key):
         CUR_ACTIVE_MODIFIER.add(key)
         if all(k in CUR_ACTIVE_MODIFIER for k in CLOSE_COMBINATION):
             logger.info("Alt-F2 Detected... Closing Runescape Bot Watch")
-            time.sleep(10)    #make sure the everything is finished before killing the process
+            time.sleep(10)  # make sure the everything is finished before killing the process
             close_bot_watch_session()
-            listener.stop()
+            all_recovery = wsc.run_recovery(logger)
+            if all_recovery:
+                logger.info("All Recovered. Rebooting...")
+
+                #####################################################
+                # wsc.shuffle_client_locations(logger)
+
+                start_MouseAndKeyBoardRecorder()
+                #
+                # p = subprocess.Popen([sys.executable, 'WatchStart.py'], close_fds=True)
+                #
+                # BOT_WATCH_PID = p.pid
+                # logger.info("Starting WatchStart Subprocess on Pid {0}...".format(BOT_WATCH_PID))
+
+
+                ##################################################
+            else:
+                listener.stop()
 
     # if key == keyboard.Key.esc:
     #     listener.stop()
 
 
 def on_release(key):
-
     if key in CUR_ACTIVE_MODIFIER:
         CUR_ACTIVE_MODIFIER.remove(key)
     # try:
@@ -84,7 +100,6 @@ logger.info("###################################################################
 logger.info("----------------------- STARTING NEW SESSION ---------------------------")
 logger.info("########################################################################")
 logger.info("########################################################################")
-
 
 # wsc.launch_runescape_clients(logger)
 wsc.shuffle_client_locations(logger)
@@ -106,7 +121,7 @@ logger.info("Starting WatchStart Subprocess on Pid {0}...".format(BOT_WATCH_PID)
 for proc in psutil.process_iter():
     try:
         # Get process name & pid from process object.
-        logger.info("processName {0} on {1}...".format(proc.name(),proc.pid))
+        logger.info("processName {0} on {1}...".format(proc.name(), proc.pid))
 
         processName = proc.name()
         processID = proc.pid

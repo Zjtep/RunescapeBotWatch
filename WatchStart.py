@@ -213,15 +213,37 @@ def run_recovery(logger):
     # base_map_file_path = base_client_info.get("MapFile")
 
     # for client_name, client_info in base_client_info.iteritems():
+
+    all_recovery = True
+
     for client_name, client_info in base_client_info.items():
         logger.info("run recovery on {0}".format(client_name))
         base_info = base_client_info.get(client_name)
         base_map_file_path = base_info.get("MapFile")
         # base_map_file_path = "C:/temp/test/edaeac32-edf2-42af-ac74-ac6db88b5ec3.png"
         bank_anchor_file = r"C:\temp\templates\seer_village_bank.png"
+
+
         match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
+
+
         if match_coordinates is None:
+
+            for x in range(5):
+                match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
+                if match_coordinates is None:
+                    break
+                else:
+                    click_loc = tuple(
+                        map(operator.add, base_info.get("ClientLoc"), base_info.get("GamePlayLocByClient")))
+                    click_loc = tuple(map(operator.add, click_loc, base_info.get("MapLocByGamePlay")))
+                    click_loc = tuple(map(operator.add, click_loc, match_coordinates))
+                    click_loc = tuple(map(operator.add, click_loc, (6, 16, 7, 16)))
+
+                    hc.move((click_loc[0], click_loc[1]), 2)
+                    hc.click(click_loc[0], click_loc[1])
             logger.info("Recovery has failed. Ending Script")
+            all_recovery = False
             continue
         else:
             click_loc = tuple(map(operator.add, base_info.get("ClientLoc"), base_info.get("GamePlayLocByClient")))
@@ -230,8 +252,10 @@ def run_recovery(logger):
             click_loc = tuple(map(operator.add, click_loc, (6, 16, 7, 16)))
 
             hc.move((click_loc[0], click_loc[1]), 2)
+            hc.click(click_loc[0], click_loc[1])
 
-
+    time.sleep(5)
+    return all_recovery
     # bank_anchor_file= r"C:\temp\templates\seer_village_bank.png"
     #
     # match_coordinates = match_images(base_map_file_path, bank_anchor_file, show_box=True)
