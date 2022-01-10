@@ -1,10 +1,10 @@
-###Runescape Bot Watch
+### Runescape Bot Watch
 
-###Problem
+### Problem
 
 With my first version, I spent a lot of time attempting to simulate mouse movements as humans do. It was an extremely difficult task as humans do not take straight lines between targets, and certainly not with the same speed that a computer could reject. I was basically attempting to program my pathing function to take a non-optimal path at a non-optimal speed and do so differently each time. EG, It also cannot follow the same bezier curve as that would be obvious. Plus all those other random interactions humans use with the mouse like idling, wiggling the cursor, highlighting random stuff, all needed to take into consideration to avoid the ban hammer. 
 
-###Solution
+### Solution
 
 This is a new take on Runescape botting with openCV which ran for over a year without detection. The solution was simple, why waste so much time attempting to perfect code to mimic a human-mouse movement, when we already have something that can do it perfectly, my hand.
 
